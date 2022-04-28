@@ -142,6 +142,8 @@ public class MainActivity extends AppCompatActivity {
         MLKitAnalyser() {
             FaceDetectorOptions options = new FaceDetectorOptions.Builder()
                         .setContourMode(FaceDetectorOptions.CONTOUR_MODE_ALL)
+                        .setClassificationMode(FaceDetectorOptions.CLASSIFICATION_MODE_ALL)
+                        .setPerformanceMode(FaceDetectorOptions.PERFORMANCE_MODE_FAST)
                         .build();
 
             detector = FaceDetection.getClient(options);

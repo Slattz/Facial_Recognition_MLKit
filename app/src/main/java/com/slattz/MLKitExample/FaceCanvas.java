@@ -16,10 +16,14 @@ import com.google.mlkit.vision.face.Face;
 import com.google.mlkit.vision.face.FaceContour;
 
 import java.util.List;
+import java.util.Locale;
 
 public class FaceCanvas extends View {
     Face face = null;
-    Paint paint;
+    Paint contourPaint;
+    Paint outlinePaint;
+    Paint textPaint;
+    Paint textBGPaint;
     float scaleFactor = 1.0f;
     float postScaleWidthOffset;
     float postScaleHeightOffset;
@@ -27,10 +31,29 @@ public class FaceCanvas extends View {
     int imageWidth = 0;
     boolean isFlipped = true;
 
+    final float TEXT_SIZE = 30.f;
+    final float TEXT_BOX = 5.f;
 
     public FaceCanvas(Context context) {
         super(context);
-        paint = new Paint();
+        outlinePaint = new Paint();
+        outlinePaint.setColor(Color.RED);
+        outlinePaint.setStrokeWidth(5);
+        outlinePaint.setStyle(Paint.Style.STROKE);
+
+        contourPaint = new Paint();
+        contourPaint.setColor(Color.WHITE);
+        contourPaint.setStrokeWidth(5);
+        contourPaint.setStyle(Paint.Style.FILL);
+
+        textPaint = new Paint();
+        textPaint.setColor(Color.WHITE);
+        textPaint.setStyle(Paint.Style.FILL);
+        textPaint.setTextSize(TEXT_SIZE);
+
+        textBGPaint = new Paint();
+        textBGPaint.setColor(Color.GRAY);
+        textBGPaint.setStyle(Paint.Style.FILL);
     }
 
     private float scale(float imagePixel) {
@@ -73,19 +96,39 @@ public class FaceCanvas extends View {
             return;
 
         updateTransformation();
-        paint.setColor(Color.RED);
-        paint.setStrokeWidth(5);
+
 
         float x = translateX(face.getBoundingBox().centerX());
         float y = translateY(face.getBoundingBox().centerY());
-        canvas.drawCircle(x, y, 8.0f, paint);
+        canvas.drawCircle(x, y, 8.0f, contourPaint);
+
+        float left = x - scale(face.getBoundingBox().width() / 2.0f);
+        float top = y - scale(face.getBoundingBox().height() / 2.0f);
+        float right = x + scale(face.getBoundingBox().width() / 2.0f);
+        float bottom = y + scale(face.getBoundingBox().height() / 2.0f);
+
+        canvas.drawRect(left, top, right, bottom, outlinePaint);
 
         for (FaceContour contour : face.getAllContours()) {
             for (PointF point : contour.getPoints()) {
-                canvas.drawCircle(translateX(point.x), translateY(point.y), 8.0f, paint);
+                canvas.drawCircle(translateX(point.x), translateY(point.y), 8.0f, contourPaint);
             }
         }
 
+        String leftEyeProb = String.format(Locale.ENGLISH, "Left eye open probability: %.2f", face.getLeftEyeOpenProbability());
+        String rightEyeProb = String.format(Locale.ENGLISH, "Right eye open probability: %.2f", face.getRightEyeOpenProbability());
+        String smileProb = String.format(Locale.ENGLISH, "Smiling probability: %.2f", face.getSmilingProbability());
+        String angleX = String.format(Locale.ENGLISH, "Head Angle X: %.2f", face.getHeadEulerAngleX());
+        String angleY = String.format(Locale.ENGLISH, "Head Angle Y: %.2f", face.getHeadEulerAngleY());
+        String angleZ = String.format(Locale.ENGLISH, "Head Angle Z: %.2f", face.getHeadEulerAngleZ());
+
+        canvas.drawRect(left, top - (6*(TEXT_BOX+TEXT_SIZE)), right, top, textBGPaint);
+        canvas.drawText(leftEyeProb, left, top - (5*(TEXT_BOX+TEXT_SIZE)), textPaint);
+        canvas.drawText(rightEyeProb, left, top - (4*(TEXT_BOX+TEXT_SIZE)), textPaint);
+        canvas.drawText(smileProb, left, top - (3*(TEXT_BOX+TEXT_SIZE)), textPaint);
+        canvas.drawText(angleX, left, top - (2*(TEXT_BOX+TEXT_SIZE)), textPaint);
+        canvas.drawText(angleY, left, top - (1*(TEXT_BOX+TEXT_SIZE)), textPaint);
+        canvas.drawText(angleZ, left, top - (0*(TEXT_BOX+TEXT_SIZE)), textPaint);
     }
 
     public void setFace(Face face, int imageWidth, int imageHeight, boolean isFlipped) {
